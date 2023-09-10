@@ -31,7 +31,11 @@ def extract_creation_date(media_path: str) -> Optional[datetime]:
     if raw_date == "":
         return None
 
-    return datetime.strptime(raw_date, "%Y:%m:%d %H:%M:%S")
+    try:
+        return datetime.strptime(raw_date, "%Y:%m:%d %H:%M:%S")
+    except ValueError as error:
+        print(f"[ WARNING ] unable to parse date from {media_path}, error: {error}")
+
 
 
 def get_fast_date(img_path: Path) -> Optional[datetime]:
