@@ -2,6 +2,8 @@ from typing import Set, Final
 from pathlib import Path
 import argparse
 from argparse import Namespace
+
+import click
 from imohash import hashfile
 
 from media_organizer.date_fetcher import get_fast_date, get_accurate_media_date
@@ -318,58 +320,57 @@ def get_default_destinition() -> Path:
     return Path.home() / MEDIA_FOLDER_NAME
 
 
-def main() -> None:
+@click.command()
+@click.argument(
+    "source_dir", type=click.Path(exists=True, file_okay=False, dir_okay=True)
+)
+@click.argument(
+    "dest_dir",
+    type=click.Path(file_okay=False, dir_okay=True),
+    default=lambda: str(get_default_destinition()),
+)
+@click.option("--fast", is_flag=True, help="Use fast mode. Less accurate but faster.")
+@click.option(
+    "--dry-run",
+    is_flag=True,
+    help="Perform a dry run without actual moving. Only print out the action that would be taken.",
+)
+@click.option(
+    "--overwrite",
+    is_flag=True,
+    help="Overwrite files in the destination folder. Be careful!",
+)
+@click.option(
+    "--delete-original",
+    is_flag=True,
+    help="Delete the original file if the destination file is the same.",
+)
+def main(
+    source_dir: str,
+    dest_dir: str,
+    fast: bool,
+    dry_run: bool,
+    overwrite: bool,
+    delete_original: bool,
+) -> None:
     """
     Organize photos by their date, either using a fast or accurate method.
 
-    Images are moved into folders structured as <destination>/<year>/<date>.
-    The script supports command-line arguments to specify the source and destination directories,
-    and whether to use the fast method or perform a dry run.
+    Media files are moved into folders structured as <destination>/<year>/<date>.
+    Files that do not have creation date in the exif metadata are either moved to
+    relevant category folder alongside the file extension. For example document called
+    foo.pdf will be organized into <destination dir>/docs/pdf/file.pdf path.
+    Some files are moved to the unsort folder, the extension haven't been found or other issue encountered.
+
+    # TODO: define <destination dir>/unsort folder.
+    #   -   if media file like bar.mp3 does not contain creation date, or malfunction date. It should go to
+    #       <destination dir>/audio/mp3/bar.mp3
     """
-    default_destination: str = str(get_default_destinition())
-
-    parser: argparse.ArgumentParser = argparse.ArgumentParser(
-        description="Organize photos by date."
-    )
-    parser.add_argument("source_dir", help="Source directory containing images.")
-    parser.add_argument(
-        "dest_dir",
-        nargs="?",
-        default=default_destination,
-        help="Destination directory.",
-    )
-    parser.add_argument(
-        "--fast", action="store_true", help="Use fast mode. Less accurate but faster."
-    )
-    parser.add_argument(
-        "--dry-run",
-        action="store_true",
-        help="Perform a dry run without actual moving. Only print out the action that would be taken.",
-    )
-    parser.add_argument(
-        "--overwrite",
-        action="store_true",
-        help="Use this flag to overwrite files in destinition folder, be careful! default is False.",
-    )
-    parser.add_argument(
-        "--delete-original",
-        action="store_true",
-        help="Use this flag if you want to delete the original file if the destitiona file is same as the original one.",
-    )
-    # TODO: Add --on-duplicate action flag.
-
-    args: Namespace = parser.parse_args()
-
-    source_dir: Path = Path(args.source_dir)
-    dest_dir: Path = Path(args.dest_dir)
+    source_dir_path: Path = Path(source_dir)
+    dest_dir_path: Path = Path(dest_dir)
 
     move_from_source(
-        source_dir,
-        dest_dir,
-        args.fast,
-        args.dry_run,
-        args.overwrite,
-        args.delete_original,
+        source_dir_path, dest_dir_path, fast, dry_run, overwrite, delete_original
     )
 
 
