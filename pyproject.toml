@@ -5,15 +5,21 @@ description = ""
 authors = ["thorgeir <thorgeirsigurd@gmail.com>"]
 readme = "README.md"
 
+[tool.poetry.scripts]
+media_organizer = 'media_organizer.media_organizer:main'
+
 [tool.poetry.dependencies]
 python = "^3.11"
 pillow = "^10.0.0"
 imohash = "^1.0.5"
+numpy = "1.26.4"
+black = "^24.10.0"
+python-dateutil = "^2.9.0.post0"
 
 
 [tool.poetry.group.dev.dependencies]
 ipython = "^8.15.0"
-black = "^23.9.0"
+black = "^24.10.0"
 flake8 = "^6.1.0"
 mypy = "^1.5.1"
 pytest = "^7.4.2"

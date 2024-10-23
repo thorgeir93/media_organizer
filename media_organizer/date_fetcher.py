@@ -1,18 +1,47 @@
 import subprocess
 from datetime import datetime
-from typing import Optional
 from pathlib import Path
+from typing import Final
 
-from PIL import Image
-from PIL.ExifTags import TAGS
-from PIL import UnidentifiedImageError
+from dateutil import parser
+
 import piexif
 
+DARKTABLE_EXT_FORMAT: Final[str] = ".xmp"
+
+COMMON_DATE_FORMATS: set[str] = {
+    "%Y:%m:%d %H:%M:%S",
+    "%Y:%m:%d %H:%M:%SZ",
+    "%Y:%m:%d %H:%M:%S%z",
+}
+"""Common date formats found in files metadata.
+
+These formats with ":" seperator for year, month and day is unusual and
+therefore the dateutil.parser.parse method cannot process dates in such format.
+See stackoverflow discussion: https://stackoverflow.com/q/73104677
+"""
 
 
-DARKTABLE_EXT_FORMAT = ".xmp"
+def try_parse_date(raw_date: str, date_format: str) -> datetime | None:
+    """Parse the given raw date string using given date format."""
+    try:
+        return datetime.strptime(raw_date, date_format)
+    except ValueError:
+        return None
 
-def extract_creation_date(media_path: str) -> Optional[datetime]:
+
+def parse_raw_date(raw_date: str) -> datetime:
+    """Parse the given raw date into datetime object."""
+    for common_date_format in COMMON_DATE_FORMATS:
+        parsed_date: datetime = try_parse_date(
+            raw_date=raw_date, date_format=common_date_format
+        )
+        if parsed_date:
+            return parsed_date
+    return None
+
+
+def extract_creation_date(media_path: str) -> datetime | None:
     """
     Extract the creation date from media using exiftool.
 
@@ -24,21 +53,24 @@ def extract_creation_date(media_path: str) -> Optional[datetime]:
     """
 
     cmd = ["exiftool", "-CreateDate", "-s3", media_path]
-    
-    result = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+
+    result = subprocess.run(
+        cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True
+    )
     raw_date = result.stdout.strip()
-    
+
     if raw_date == "":
         return None
 
-    try:
-        return datetime.strptime(raw_date, "%Y:%m:%d %H:%M:%S")
-    except ValueError as error:
-        print(f"[ WARNING ] unable to parse date from {media_path}, error: {error}")
+    parsed_date: datetime | None = parse_raw_date(raw_date=raw_date)
+
+    if not parsed_date:
+        print(f"[ WARNING ] Could not parse {raw_date} date from {media_path}")
+
+    return parsed_date
 
 
-
-def get_fast_date(img_path: Path) -> Optional[datetime]:
+def get_fast_date(img_path: Path) -> datetime | None:
     """
     Get the modified date of an image using the file system's metadata.
 
@@ -52,44 +84,77 @@ def get_fast_date(img_path: Path) -> Optional[datetime]:
     return datetime.fromtimestamp(modified_time)
 
 
-def get_accurate_img_date(img_path: Path) -> Optional[datetime]:
-    """ 
+def get_accurate_img_date(img_path: Path) -> datetime | None:
+    """
     Get the creation date of an image using its EXIF metadata.
 
     Args:
         img_path (Path): The path to the image.
 
     Returns:
-        Optional[datetime]: Exif creation date.
+        datetime: Exif creation date or None if loading exif fails.
     """
     try:
         exif_data = piexif.load(str(img_path))
-    except piexif._exceptions.InvalidImageDataError as error:
-        #print(f"VERBOSE:piexif unable to read EXIF data from {img_path}")
+    except (piexif._exceptions.InvalidImageDataError, ValueError) as error:
+        print(
+            f"[ VERBOSE ]: piexif unable to read EXIF data from {img_path}, error: {error}"
+        )
         return None
 
     datetime_keys = [
         piexif.ExifIFD.DateTimeOriginal,
         piexif.ExifIFD.DateTimeDigitized,
-        piexif.ImageIFD.DateTime
+        piexif.ImageIFD.DateTime,
     ]
-    
+
     img_datetime = None
     for key in datetime_keys:
         if key in exif_data["Exif"] and exif_data["Exif"][key]:
-            img_datetime = exif_data["Exif"][key].decode('utf-8')
+            img_datetime = exif_data["Exif"][key].decode("utf-8")
             break
-    
+
     if not img_datetime:
         return None
-    
-    img_date: datetime = datetime.strptime(
-        img_datetime, "%Y:%m:%d %H:%M:%S"
-    )
-    return img_date
+
+    parsed_date: datetime | None = parse_raw_date(raw_date=img_datetime)
+
+    if not parsed_date:
+        print(f"[ WARNING ] Could not parse {img_datetime} date from {img_path}")
+
+    return parsed_date
 
 
-#def get_accurate_img_date(img_path: Path) -> Optional[datetime]:
+def get_accurate_media_date(media_path: Path) -> datetime | None:
+    """
+    Get the creation date of an image using its EXIF metadata.
+
+    Args:
+        media_path (Path): The path to the media.
+
+    Returns:
+        Date of the given media file path. None if date extraction fails.
+    """
+    img_date: datetime
+
+    # Special case for Darktable config files.
+    if media_path.suffix == DARKTABLE_EXT_FORMAT:
+        try:
+            img_date: datetime = get_accurate_img_date(media_path.with_suffix(""))
+        except FileNotFoundError:
+            print(f"[ WARNING ] {media_path} cfg file does not belongs to any file")
+            return None
+    else:
+        img_date: datetime = get_accurate_img_date(media_path)
+
+    if img_date:
+        return img_date
+    else:
+        # probably a video file
+        return extract_creation_date(media_path)
+
+
+# def get_accurate_img_date(img_path: Path) -> Optional[datetime]:
 #    """
 #    Get the creation date of an image using its EXIF metadata.
 #
@@ -112,10 +177,10 @@ def get_accurate_img_date(img_path: Path) -> Optional[datetime]:
 #                if key in exif_data and exif_data[key]:
 #                    img_datetime = exif_data[key]
 #                    break
-#            
+#
 #            if not img_datetime:
 #                return None
-#            
+#
 #            img_date: datetime = datetime.strptime(
 #                img_datetime, "%Y:%m:%d %H:%M:%S"
 #            )
@@ -125,34 +190,3 @@ def get_accurate_img_date(img_path: Path) -> Optional[datetime]:
 #        print(f"Not supported media type for PIL.Image: {error}")
 #
 #    return None
-
-
-
-def get_accurate_media_date(media_path: Path) -> Optional[datetime]:
-    """
-    Get the creation date of an image using its EXIF metadata.
-
-    Args:
-        media_path (Path): The path to the image.
-
-    Returns:
-        Tuple[Optional[str], Optional[str]]: The year and full date (in YYYYMMDD format),
-                                             or (None, None) if the data can't be fetched.
-    """
-    img_date: datetime
-
-    # Special case for Darktable config files.
-    if media_path.suffix == DARKTABLE_EXT_FORMAT:
-        try:
-            img_date: datetime = get_accurate_img_date(media_path.with_suffix(''))
-        except FileNotFoundError:
-            print(f"[ WARNING ] {media_path} cfg file does not belongs to any file")
-            return None
-    else:
-        img_date: datetime = get_accurate_img_date(media_path)
-
-    if img_date:
-        return img_date
-    else:
-        # probably a video file
-        return extract_creation_date(media_path)
