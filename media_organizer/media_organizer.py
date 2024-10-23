@@ -1,7 +1,5 @@
 from typing import Set, Final
 from pathlib import Path
-import argparse
-from argparse import Namespace
 
 import click
 from imohash import hashfile
