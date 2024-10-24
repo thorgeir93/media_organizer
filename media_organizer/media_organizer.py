@@ -19,6 +19,13 @@ DOCS_FOLDER_NAME: Final[str] = "docs"
 
 MEDIA_FOLDER_NAME: Final = "media"
 
+ON_DUPLICATE_CREATE_UNIQ_FILENAME: Final[str] = "create-uniq-filename"
+"""Create unique filename for the source file in the destination directory."""
+ON_DUPLICATE_OVERWRITE: Final[str] = "overwrite"
+"""Overwrite the destination file with the source file."""
+ON_DUPLICATE_SKIP: Final[str] = "skip"
+"""Leave the source filepath untouched if the same filename exists in the destination."""
+
 
 PHOTOS_SUPPORTED_EXTENSIONS: Set[str] = {
     # Standard format
@@ -75,11 +82,41 @@ ARCHIVE_SUPPORTED_EXTENSIONS: Set[str] = {
 DARKTABLE_EXT_FORMAT: Final[str] = ".xmp"
 
 
+def create_unique_filepath(filepath: Path) -> Path:
+    """Create a unique file path if filepath exists by appending a number to the file name.
+
+    Args:
+        filepath: The destination file path.
+
+    Returns:
+        A unique file path in the destination directory.
+    """
+    base_name: str = filepath.stem
+    extension: str = filepath.suffix
+    counter: int = 1
+    new_dest_path: Path = filepath
+    while new_dest_path.exists():
+        new_dest_path = filepath.with_name(
+            f"{base_name}_{str(counter).zfill(2)}{extension}"
+        )
+        counter += 1
+    return new_dest_path
+
+
+# def is_files_equal(src_path: Path, dst_path: Path) -> bool:
+#     """Return True if the given two files are equal otherwise False."""
+#     # Compare file sizes first (cheap check)
+#     if src_path.stat().st_size != dst_path.stat().st_size:
+#         return True
+#     return hashfile(src_path, hexdigest=True) != hashfile(dst_path, hexdigest=True)
+
+
 def move_file(
-    file_path: Path,
+    source_filepath: Path,
     dest_dir: Path,
     file_extension: str,
     dry_run: bool = True,
+    on_duplicate: str = ON_DUPLICATE_CREATE_UNIQ_FILENAME,
 ) -> None:
     """TODO
 
@@ -93,11 +130,26 @@ def move_file(
 
     """
     dest_folder: Path = dest_dir / file_extension
-    dest_endpoint = dest_folder / file_path.name
-    print(f"mv {file_path} {dest_endpoint}")
+    dest_filepath = dest_folder / source_filepath.name
+
+    if dest_filepath.exists():
+        print(f"[ WARNING ] Found duplicate: {source_filepath} == {dest_filepath}")
+        match on_duplicate:
+            case ON_DUPLICATE_CREATE_UNIQ_FILENAME:
+                dest_filepath = create_unique_filepath(dest_filepath)
+            case ON_DUPLICATE_SKIP:
+                print(f"[ SKIP ] {source_filepath} {dest_filepath}")
+                return
+            case ON_DUPLICATE_OVERWRITE:
+                print(f"[ OVERWRITE ] {source_filepath} -> {dest_filepath}")
+            case _:
+                raise ValueError(f"{on_duplicate=} did not match any configured value.")
+
+    print(f"mv {source_filepath} {dest_filepath}")
+
     if not dry_run:
         dest_folder.mkdir(parents=True, exist_ok=True)
-        file_path.rename(dest_endpoint)
+        source_filepath.rename(dest_filepath)
 
 
 def move_media(
@@ -245,6 +297,7 @@ def move_from_source(
     dry_run: bool = True,
     overwrite: bool = False,
     delete_original: bool = False,
+    on_duplicate: str = ON_DUPLICATE_CREATE_UNIQ_FILENAME,
 ) -> None:
     """Move media from given source directory to the given destination directory."""
     for media_path in source_dir.rglob("*"):
@@ -277,6 +330,7 @@ def move_from_source(
                 dest_dir / DOCS_FOLDER_NAME,
                 media_path.suffix.strip("."),
                 dry_run,
+                on_duplicate=on_duplicate,
             )
             continue
 
@@ -343,6 +397,19 @@ def get_default_destinition() -> Path:
     is_flag=True,
     help="Delete the original file if the destination file is the same.",
 )
+@click.option(
+    "--on-duplicate",
+    type=click.Choice(
+        [
+            ON_DUPLICATE_CREATE_UNIQ_FILENAME,
+            ON_DUPLICATE_OVERWRITE,
+            ON_DUPLICATE_SKIP,
+        ],
+        case_sensitive=True,
+    ),
+    default=ON_DUPLICATE_CREATE_UNIQ_FILENAME,
+    help="What to do when file with same name already exists. ",
+)
 def main(
     source_dir: str,
     dest_dir: str,
@@ -350,6 +417,7 @@ def main(
     dry_run: bool,
     overwrite: bool,
     delete_original: bool,
+    on_duplicate: str = ON_DUPLICATE_CREATE_UNIQ_FILENAME,
 ) -> None:
     """
     Organize photos by their date, either using a fast or accurate method.
@@ -368,7 +436,13 @@ def main(
     dest_dir_path: Path = Path(dest_dir)
 
     move_from_source(
-        source_dir_path, dest_dir_path, fast, dry_run, overwrite, delete_original
+        source_dir_path,
+        dest_dir_path,
+        fast,
+        dry_run,
+        overwrite,
+        delete_original,
+        on_duplicate,
     )
 
 

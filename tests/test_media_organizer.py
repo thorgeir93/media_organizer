@@ -1,9 +1,11 @@
 import tempfile
 from typing import Iterator
+from unittest.mock import patch
 
 import pytest
 from pathlib import Path
 from media_organizer import media_organizer
+from media_organizer.media_organizer import create_unique_filepath
 
 from tests.create_img import create_mock_image
 
@@ -111,3 +113,25 @@ class TestMediaOrganizer:
 
     # TODO: fix delete_original, it does not do what it should do, that is delete the original files even
     #   though it is not moved to the destination directory. Reconcider this.
+    @pytest.mark.parametrize(
+        "mock_exists_side_effect, expected_result",
+        [
+            ([False], Path("/path/to/destination/file.txt")),  # No file conflict
+            (
+                [True, False],
+                Path("/path/to/destination/file_01.txt"),
+            ),  # Single conflict, resolves with _01
+            (
+                [True, True, False],
+                Path("/path/to/destination/file_02.txt"),
+            ),  # Multiple conflicts, resolves with _02
+        ],
+    )
+    @patch("pathlib.Path.exists")
+    def test_create_unique_filepath(
+        self, mock_exists, mock_exists_side_effect, expected_result
+    ):
+        dest_path = Path("/path/to/destination/file.txt")
+        mock_exists.side_effect = mock_exists_side_effect
+        result = create_unique_filepath(dest_path)
+        assert result == expected_result
