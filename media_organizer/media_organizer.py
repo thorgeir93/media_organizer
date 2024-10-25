@@ -13,7 +13,7 @@ YEAR_FORMAT: Final[str] = "%Y"
 
 ARCHIVES_FOLDER_NAME: Final[str] = "archives"
 PHOTOS_FOLDER_NAME: Final[str] = "photos"
-VIDOES_FOLDER_NAME: Final[str] = "videos"
+VIDEOS_FOLDER_NAME: Final[str] = "videos"
 EXPORT_FOLDER_NAME: Final[str] = "export"
 UNSORT_FOLDER_NAME: Final[str] = "unsort"
 AUDIO_FOLDER_NAME: Final[str] = "audio"
@@ -153,6 +153,7 @@ def find_xmp_config(photo_path: Path) -> Path | None:
 
 def is_files_equal(src_path: Path, dst_path: Path) -> bool:
     """Return True if the given two files are equal otherwise False."""
+    # TODO: unittest this method.
     # Compare file sizes first (cheap check)
     if src_path.stat().st_size != dst_path.stat().st_size:
         return True
@@ -175,6 +176,10 @@ def move_file(
             already exists in the destination folder.
     """
     # TODO: unitest source file path without extension.
+
+    # TODO: BUG!!!!! destination folders that already have creation
+    #   date metadata should not be categorized with file extension.
+    #   What about unsort folder?
     file_extension: str = src_filepath.suffix.strip(".")
     dest_folder: Path = dest_dir / file_extension
     dest_filepath = dest_folder / src_filepath.name
@@ -217,12 +222,15 @@ def move_media(
     dry_run: bool = True,
     on_duplicate: OnDuplicate = OnDuplicate.CREATE_UNIQ_FILENAME_IF_CONTENT_MISMATCH,
 ) -> None:
-    """
-    Move media from to relevant folder in given destintion directory.
+    """Move media from source folder to the given destinationn directory.
 
-    :param media_path: The path to a image.
-    :param dest_dir: The destination directory to move the media to.
-    :param fast: Whether to use the fast method to fetch dates.
+    Args:
+        media_path: The path to a image.
+        dest_dir: The destination directory to move the media to.
+        fast: Whether to use the fast method to fetch dates.
+        dry_run: Does not move the media unless this flag is set to False.
+        on_duplicate: Which strategy to follow when moving a file that
+            already exists in the destination folder.
     """
     media_datetime = (
         get_fast_date(media_path) if fast else get_accurate_media_date(media_path)
@@ -285,7 +293,7 @@ def move_from_source(
         if media_path.suffix.lower() in VIDEOS_SUPPORTED_EXTENSIONS:
             move_media(
                 media_path,
-                dest_dir / VIDOES_FOLDER_NAME,
+                dest_dir / VIDEOS_FOLDER_NAME,
                 fast,
                 dry_run,
                 on_duplicate=on_duplicate,
@@ -363,24 +371,33 @@ def get_default_destinition() -> Path:
         case_sensitive=True,
     ),
     default=OnDuplicate.CREATE_UNIQ_FILENAME_IF_CONTENT_MISMATCH,
-    help="What to do when file with same name already exists. ",
+    help="What to do when file with same name already exists.",
 )
-# TODO: add flag
 def main(
-    source_dir: str,
-    dest_dir: str,
-    fast: bool,
-    dry_run: bool,
-    on_duplicate: OnDuplicate = OnDuplicate.CREATE_UNIQ_FILENAME_IF_CONTENT_MISMATCH,
+    source_dir: str, dest_dir: str, fast: bool, dry_run: bool, on_duplicate: OnDuplicate
 ) -> None:
-    """
-    Organize photos by their date, either using a fast or accurate method.
+    """Organize files by type of file, file extension or creation date.
 
-    Media files are moved into folders structured as <destination>/<year>/<date>.
-    Files that do not have creation date in the exif metadata are either moved to
-    relevant category folder alongside the file extension. For example document called
-    foo.pdf will be organized into <destination dir>/docs/pdf/file.pdf path.
-    Some files are moved to the unsort folder, the extension haven't been found or other issue encountered.
+    Folder structure:
+        Media files are moved into folders structured as
+        <destination>/<year>/<date>. Files that do not
+        have creation date in the exif metadata are either
+        moved to relevant category folder alongside the
+        file extension. For example document called foo.pdf
+        will be organized into <destination dir>/docs/pdf/file.pdf
+        path. Some files are moved to the unsort folder, the
+        extension haven't been found or other issue encountered.
+
+    on_duplicate flag:
+        In case the source file already exists in the destination path,
+        the on duplicate flag comes handy. You can specify which
+        strategy to go for in these cases. For example
+        CREATE_UNIQ_FILENAME_IF_CONTENT_MISMATCH strategy will copy
+        the source file to the destination folder with uniq name only
+        if the content of those two files are not the same. If they
+        were the same there is no need to move the file to the destination
+        folder with a new file name. Then you have two identical files
+        with different name. Which is waste of space.
 
     # TODO: define <destination dir>/unsort folder.
     #   -   if media file like bar.mp3 does not contain creation date, or malfunction date. It should go to
@@ -401,6 +418,7 @@ def main(
 # TODO: Allow the script to work in threads or multi processes.
 # TODO: check if on duplicate file has the same content.
 #   If so, we can skip move it and just delete the original file
+# TODO: split the file into interface and logic.
 
 if __name__ == "__main__":
     main()
