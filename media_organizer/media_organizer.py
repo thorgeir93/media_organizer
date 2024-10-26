@@ -110,7 +110,7 @@ The trick is to move the config file with the image it belongs.
 """
 
 
-# Case when .xmp darktable cfg file does not have any image file
+# Case when .xmp Darktable cfg file does not have any image file
 # to be part of. That is why we can delete that config file.
 
 
@@ -160,9 +160,15 @@ def is_files_equal(src_path: Path, dst_path: Path) -> bool:
     return hashfile(src_path, hexdigest=True) != hashfile(dst_path, hexdigest=True)
 
 
+def add_path_extension(src_filepath: Path, base_dir: Path) -> Path:
+    file_extension: str = src_filepath.suffix.strip(".")
+    dest_filepath: Path = base_dir / file_extension / src_filepath.name
+    return dest_filepath
+
+
 def move_file(
     src_filepath: Path,
-    dest_dir: Path,
+    dst_filepath: Path,
     dry_run: bool = True,
     on_duplicate: OnDuplicate = OnDuplicate.CREATE_UNIQ_FILENAME_IF_CONTENT_MISMATCH,
 ) -> None:
@@ -170,7 +176,7 @@ def move_file(
 
     Args:
         src_filepath: The source file to move.
-        dest_dir: The destination folder to move the source file into.
+        dst_filepath: The destination folder to move the source file into.
         dry_run: Does not move the file unless this flag is set to False.
         on_duplicate: Which strategy to follow when moving a file that
             already exists in the destination folder.
@@ -180,39 +186,36 @@ def move_file(
     # TODO: BUG!!!!! destination folders that already have creation
     #   date metadata should not be categorized with file extension.
     #   What about unsort folder?
-    file_extension: str = src_filepath.suffix.strip(".")
-    dest_folder: Path = dest_dir / file_extension
-    dest_filepath = dest_folder / src_filepath.name
 
-    if dest_filepath.exists():
+    if dst_filepath.exists():
         print(
             "[ WARNING ] duplicate: Found file with same name in the destination folder. "
-            f"{src_filepath} == {dest_filepath}"
+            f"{src_filepath} == {dst_filepath}"
         )
         match on_duplicate:
             case OnDuplicate.CREATE_UNIQ_FILENAME_IF_CONTENT_MISMATCH:
                 # TODO: unittest this functionality.
-                if is_files_equal(src_path=src_filepath, dst_path=dest_filepath):
+                if is_files_equal(src_path=src_filepath, dst_path=dst_filepath):
                     print(f"[ DEBUG ] rm {src_filepath}")
                     if not dry_run:
                         src_filepath.unlink()
                     return
-                dest_filepath = create_unique_filepath(dest_filepath)
+                dst_filepath = create_unique_filepath(dst_filepath)
             case OnDuplicate.CREATE_UNIQ_FILENAME:
-                dest_filepath = create_unique_filepath(dest_filepath)
+                dst_filepath = create_unique_filepath(dst_filepath)
             case OnDuplicate.SKIP:
-                print(f"[ SKIP ] {src_filepath} {dest_filepath}")
+                print(f"[ SKIP ] {src_filepath} {dst_filepath}")
                 return
             case OnDuplicate.OVERWRITE:
-                print(f"[ OVERWRITE ] {src_filepath} -> {dest_filepath}")
+                print(f"[ OVERWRITE ] {src_filepath} -> {dst_filepath}")
             case _:
                 raise ValueError(f"{on_duplicate=} did not match any configured value.")
 
-    print(f"mv {src_filepath} {dest_filepath}")
+    print(f"mv {src_filepath} {dst_filepath}")
 
     if not dry_run:
-        dest_folder.mkdir(parents=True, exist_ok=True)
-        src_filepath.rename(dest_filepath)
+        dst_filepath.parent.mkdir(parents=True, exist_ok=True)
+        src_filepath.rename(dst_filepath)
 
 
 def move_media(
@@ -244,7 +247,7 @@ def move_media(
 
     move_file(
         src_filepath=media_path,
-        dest_dir=dest_dir,
+        dst_filepath=dest_dir / media_path.name,
         dry_run=dry_run,
         on_duplicate=on_duplicate,
     )
@@ -254,7 +257,7 @@ def move_media(
             print(f"[ DEBUG ] Found config {xmp_path} for {media_path}")
             move_file(
                 src_filepath=xmp_path,
-                dest_dir=dest_dir,
+                dst_filepath=dest_dir / xmp_path.name,
                 dry_run=dry_run,
                 on_duplicate=on_duplicate,
             )
@@ -280,6 +283,9 @@ def move_from_source(
             print(f"[ VERBOSE ][ SKIP ] is folder: {media_path}")
             continue
 
+        dst_filepath: Path = dest_dir / UNSORT_FOLDER_NAME / media_path.name
+        """The target destination filepath to move the source filepath to."""
+
         if media_path.suffix.lower() in PHOTOS_SUPPORTED_EXTENSIONS:
             move_media(
                 media_path,
@@ -302,9 +308,12 @@ def move_from_source(
 
         if media_path.suffix.lower() in TEXT_SUPPORTED_EXTENSIONS:
             # TODO: change the media_path to filepath since we are working with other files than media as well.
+            dst_filepath = add_path_extension(
+                media_path, base_dir=dest_dir / DOCS_FOLDER_NAME
+            )
             move_file(
                 media_path,
-                dest_dir / DOCS_FOLDER_NAME,
+                dst_filepath,
                 dry_run,
                 on_duplicate=on_duplicate,
             )
@@ -312,9 +321,12 @@ def move_from_source(
 
         if media_path.suffix.lower() in AUDIO_SUPPORTED_EXTENSIONS:
             # TODO: change the media_path to filepath since we are working with other files than media as well.
+            dst_filepath = add_path_extension(
+                media_path, base_dir=dest_dir / AUDIO_FOLDER_NAME
+            )
             move_file(
                 media_path,
-                dest_dir / AUDIO_FOLDER_NAME,
+                dst_filepath,
                 dry_run,
                 on_duplicate=on_duplicate,
             )
@@ -322,9 +334,12 @@ def move_from_source(
 
         if media_path.suffix.lower() in ARCHIVE_SUPPORTED_EXTENSIONS:
             # TODO: change the media_path to filepath since we are working with other files than media as well.
+            dst_filepath = add_path_extension(
+                media_path, base_dir=dest_dir / ARCHIVES_FOLDER_NAME
+            )
             move_file(
                 media_path,
-                dest_dir / ARCHIVES_FOLDER_NAME,
+                dst_filepath,
                 dry_run,
                 on_duplicate=on_duplicate,
             )
@@ -332,9 +347,13 @@ def move_from_source(
 
         print(f"[ WARNING ] {media_path} Unknown type")
 
+        if media_path.suffix:
+            dst_filepath = add_path_extension(
+                media_path, base_dir=dest_dir / UNSORT_FOLDER_NAME
+            )
         move_file(
             media_path,
-            dest_dir / UNSORT_FOLDER_NAME,
+            dst_filepath,
             dry_run,
             on_duplicate=on_duplicate,
         )
