@@ -35,7 +35,7 @@ def test_extract_creation_date(monkeypatch, tmpdir):
     monkeypatch.setattr("subprocess.run", mock_run)
 
     _, video_file = create_test_files(tmpdir)
-    result = extract_creation_date(str(video_file))
+    result = extract_creation_date(video_file)
 
     assert result == datetime(2023, 5, 20, 15, 45, 50)
 

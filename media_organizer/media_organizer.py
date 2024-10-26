@@ -33,11 +33,8 @@ def move_file(
         on_duplicate: Which strategy to follow when moving a file that
             already exists in the destination folder.
     """
-    # TODO: unitest source file path without extension.
-
-    # TODO: BUG!!!!! destination folders that already have creation
-    #   date metadata should not be categorized with file extension.
-    #   What about unsort folder?
+    # TODO: unitest source file path without extension specifically.
+    # TODO: covera all statements in unittest.
 
     if dst_filepath.exists():
         print(
