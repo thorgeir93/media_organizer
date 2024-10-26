@@ -1,169 +1,21 @@
-from enum import StrEnum
 from typing import Set, Final
 from pathlib import Path
 
 import click
-from imohash import hashfile
 
+from media_organizer import config
 from media_organizer.date_fetcher import get_fast_date, get_accurate_media_date
+from media_organizer.enums import OnDuplicate
+from media_organizer.file_utils import (
+    create_unique_filepath,
+    is_files_equal,
+    add_path_extension,
+)
+from media_organizer.xmp_utils import find_xmp_config
 
 # How the folder name is
 FOLDER_NAME_FORMAT: Final[str] = "%Y_%m_%d"
 YEAR_FORMAT: Final[str] = "%Y"
-
-ARCHIVES_FOLDER_NAME: Final[str] = "archives"
-PHOTOS_FOLDER_NAME: Final[str] = "photos"
-VIDEOS_FOLDER_NAME: Final[str] = "videos"
-EXPORT_FOLDER_NAME: Final[str] = "export"
-UNSORT_FOLDER_NAME: Final[str] = "unsort"
-AUDIO_FOLDER_NAME: Final[str] = "audio"
-DOCS_FOLDER_NAME: Final[str] = "docs"
-
-MEDIA_FOLDER_NAME: Final = "media"
-
-
-class OnDuplicate(StrEnum):
-    """Enum class containing options when destination already have the same filename."""
-
-    CREATE_UNIQ_FILENAME: Final[str] = "create-uniq-filename"
-    """Create unique filename for the source file in the destination directory."""
-    CREATE_UNIQ_FILENAME_IF_CONTENT_MISMATCH: Final[str] = (
-        "create-uniq-filename-if-content-mismatch"
-    )
-    """Create unique filename if content in the source and destination dirs are not equal.
-    
-    This is slower than just CREATE_UNIQ_FILENAME since this settings requires
-    the code to generate hashes of two files to compare if they are equal or not.
-    The benefit of this settings is that we are not creating extra files in the
-    destination if it already have content.
-    """
-    OVERWRITE: Final[str] = "overwrite"
-    """Overwrite the destination file with the source file."""
-    SKIP: Final[str] = "skip"
-    """Leave the source filepath untouched if the same filename exists in the destination."""
-
-
-PHOTOS_SUPPORTED_EXTENSIONS: Set[str] = {
-    # Standard format
-    ".jpg",
-    # Unsorted
-    ".png",  # Limited date information
-    ".gif",  # Limited date information
-    # Raw image format
-    ".cr2",
-    ".dng",
-    ".arw",
-    ".nef",
-}
-
-
-VIDEOS_SUPPORTED_EXTENSIONS: Set[str] = {
-    # Video format
-    ".mp4",
-    ".mov",
-}
-
-AUDIO_SUPPORTED_EXTENSIONS: Set[str] = {
-    ".woff",
-    ".wav",
-    ".mp3",
-}
-
-
-TEXT_SUPPORTED_EXTENSIONS: Set[str] = {
-    # Normal text
-    ".txt",
-    # Data formats
-    ".xml",
-    ".csv",
-    ".svg",
-    # Script
-    ".py",
-    ".java",
-    ".sh",
-    ".dll",
-    ".h",
-    ".c",
-    ".f",  # Found javascript
-    # Templates
-    ".html",
-    # Darktable config file
-    # TODO: unittest .xmp configs alongside .jpg or raw file. See if they will follow.
-    ".xmp",
-}
-
-ARCHIVE_SUPPORTED_EXTENSIONS: Set[str] = {
-    ".gz",
-    ".zip",
-}
-
-DARKTABLE_EXT_FORMAT: Final[str] = ".xmp"
-"""Config files for image editing.
-
-Darktable is an application to process images in batches.
-For each image, the application creates an config file with extension `.xmp`.
-These config files contains a xml template that incdlues how the image has been editing.
-This allows us to keep the raw image untouched, still showing the raw file in the darktable
-application like it have been edit.
-
-The trick is to move the config file with the image it belongs.
-"""
-
-
-# Case when .xmp Darktable cfg file does not have any image file
-# to be part of. That is why we can delete that config file.
-
-
-def create_unique_filepath(filepath: Path) -> Path:
-    """Create a unique file path if filepath exists by appending a number to the file name.
-
-    Args:
-        filepath: The destination file path.
-
-    Returns:
-        A unique file path in the destination directory.
-    """
-    base_name: str = filepath.stem
-    extension: str = filepath.suffix
-    counter: int = 1
-    new_dest_path: Path = filepath
-    while new_dest_path.exists():
-        new_dest_path = filepath.with_name(
-            f"{base_name}_{str(counter).zfill(2)}{extension}"
-        )
-        counter += 1
-    return new_dest_path
-
-
-def find_xmp_config(photo_path: Path) -> Path | None:
-    """Checks if an .xmp config file exists in the same location as the given photo file.
-
-    Args:
-        photo_path: Path to the photo file.
-
-    Returns:
-        Path to the .xmp config file if found, otherwise None.
-    """
-    # TODO: unittest this method.
-    if not photo_path.is_file():
-        raise ValueError("The provided path does not point to a valid file.")
-    xmp_path: Path = photo_path.with_suffix(".xmp")
-    return xmp_path if xmp_path.exists() else None
-
-
-def is_files_equal(src_path: Path, dst_path: Path) -> bool:
-    """Return True if the given two files are equal otherwise False."""
-    # TODO: unittest this method.
-    # Compare file sizes first (cheap check)
-    if src_path.stat().st_size != dst_path.stat().st_size:
-        return True
-    return hashfile(src_path, hexdigest=True) != hashfile(dst_path, hexdigest=True)
-
-
-def add_path_extension(src_filepath: Path, base_dir: Path) -> Path:
-    file_extension: str = src_filepath.suffix.strip(".")
-    dest_filepath: Path = base_dir / file_extension / src_filepath.name
-    return dest_filepath
 
 
 def move_file(
@@ -245,7 +97,7 @@ def move_media(
         date_folder: str = f"{media_year}/{media_date}"
         dest_dir = dest_dir / date_folder
 
-    if media_path.suffix in PHOTOS_SUPPORTED_EXTENSIONS:
+    if media_path.suffix in config.PHOTOS_SUPPORTED_EXTENSIONS:
         if xmp_path := find_xmp_config(photo_path=media_path):
             print(f"[ INFO ] Found config {xmp_path} for {media_path}")
             move_file(
@@ -289,31 +141,31 @@ def move_from_source(
             print(f"[ VERBOSE ][ SKIP ] is folder: {src_path}")
             continue
 
-        dst_path = dest_dir / UNSORT_FOLDER_NAME / src_path.name
+        dst_path = dest_dir / config.UNSORT_FOLDER_NAME / src_path.name
 
-        if src_path.suffix.lower() in PHOTOS_SUPPORTED_EXTENSIONS:
+        if src_path.suffix.lower() in config.PHOTOS_SUPPORTED_EXTENSIONS:
             move_media(
                 media_path=src_path,
-                dest_dir=dest_dir / PHOTOS_FOLDER_NAME,
+                dest_dir=dest_dir / config.PHOTOS_FOLDER_NAME,
                 fast=fast,
                 dry_run=dry_run,
                 on_duplicate=on_duplicate,
             )
             continue
 
-        if src_path.suffix.lower() in VIDEOS_SUPPORTED_EXTENSIONS:
+        if src_path.suffix.lower() in config.VIDEOS_SUPPORTED_EXTENSIONS:
             move_media(
                 media_path=src_path,
-                dest_dir=dest_dir / VIDEOS_FOLDER_NAME,
+                dest_dir=dest_dir / config.VIDEOS_FOLDER_NAME,
                 fast=fast,
                 dry_run=dry_run,
                 on_duplicate=on_duplicate,
             )
             continue
 
-        if src_path.suffix.lower() in TEXT_SUPPORTED_EXTENSIONS:
+        if src_path.suffix.lower() in config.TEXT_SUPPORTED_EXTENSIONS:
             dst_path = add_path_extension(
-                src_path, base_dir=dest_dir / DOCS_FOLDER_NAME
+                src_path, base_dir=dest_dir / config.DOCS_FOLDER_NAME
             )
             move_file(
                 src_filepath=src_path,
@@ -323,9 +175,9 @@ def move_from_source(
             )
             continue
 
-        if src_path.suffix.lower() in AUDIO_SUPPORTED_EXTENSIONS:
+        if src_path.suffix.lower() in config.AUDIO_SUPPORTED_EXTENSIONS:
             dst_path = add_path_extension(
-                src_path, base_dir=dest_dir / AUDIO_FOLDER_NAME
+                src_path, base_dir=dest_dir / config.AUDIO_FOLDER_NAME
             )
             move_file(
                 src_filepath=src_path,
@@ -335,9 +187,9 @@ def move_from_source(
             )
             continue
 
-        if src_path.suffix.lower() in ARCHIVE_SUPPORTED_EXTENSIONS:
+        if src_path.suffix.lower() in config.ARCHIVE_SUPPORTED_EXTENSIONS:
             dst_path = add_path_extension(
-                src_path, base_dir=dest_dir / ARCHIVES_FOLDER_NAME
+                src_path, base_dir=dest_dir / config.ARCHIVES_FOLDER_NAME
             )
             move_file(
                 src_filepath=src_path,
@@ -351,7 +203,7 @@ def move_from_source(
 
         if src_path.suffix:
             dst_path = add_path_extension(
-                src_path, base_dir=dest_dir / UNSORT_FOLDER_NAME
+                src_path, base_dir=dest_dir / config.UNSORT_FOLDER_NAME
             )
         move_file(
             src_filepath=src_path,
@@ -361,10 +213,6 @@ def move_from_source(
         )
 
 
-def get_default_destinition() -> Path:
-    return Path.home() / MEDIA_FOLDER_NAME
-
-
 @click.command()
 @click.argument(
     "source_dir", type=click.Path(exists=True, file_okay=False, dir_okay=True)
@@ -372,7 +220,7 @@ def get_default_destinition() -> Path:
 @click.argument(
     "dest_dir",
     type=click.Path(file_okay=False, dir_okay=True),
-    default=lambda: str(get_default_destinition()),
+    default=lambda: str(config.get_default_destinition()),
 )
 @click.option("--fast", is_flag=True, help="Use fast mode. Less accurate but faster.")
 @click.option(
