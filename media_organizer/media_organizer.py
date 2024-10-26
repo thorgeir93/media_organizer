@@ -245,22 +245,22 @@ def move_media(
         date_folder: str = f"{media_year}/{media_date}"
         dest_dir = dest_dir / date_folder
 
-    move_file(
-        src_filepath=media_path,
-        dst_filepath=dest_dir / media_path.name,
-        dry_run=dry_run,
-        on_duplicate=on_duplicate,
-    )
-
     if media_path.suffix in PHOTOS_SUPPORTED_EXTENSIONS:
         if xmp_path := find_xmp_config(photo_path=media_path):
-            print(f"[ DEBUG ] Found config {xmp_path} for {media_path}")
+            print(f"[ INFO ] Found config {xmp_path} for {media_path}")
             move_file(
                 src_filepath=xmp_path,
                 dst_filepath=dest_dir / xmp_path.name,
                 dry_run=dry_run,
                 on_duplicate=on_duplicate,
             )
+
+    move_file(
+        src_filepath=media_path,
+        dst_filepath=dest_dir / media_path.name,
+        dry_run=dry_run,
+        on_duplicate=on_duplicate,
+    )
 
 
 def move_from_source(
@@ -271,6 +271,12 @@ def move_from_source(
     on_duplicate: OnDuplicate = OnDuplicate.CREATE_UNIQ_FILENAME_IF_CONTENT_MISMATCH,
 ) -> None:
     """Move media from given source directory to the given destination directory."""
+    dst_path: Path
+    """The target destination filepath to move the source filepath to.
+
+    By default, we move the source file to unsorted folder if we cannot
+    categorize the file. 
+    """
     for src_path in source_dir.rglob("*"):
         if not src_path.exists():
             print(
@@ -283,8 +289,7 @@ def move_from_source(
             print(f"[ VERBOSE ][ SKIP ] is folder: {src_path}")
             continue
 
-        dst_path: Path = dest_dir / UNSORT_FOLDER_NAME / src_path.name
-        """The target destination filepath to move the source filepath to."""
+        dst_path = dest_dir / UNSORT_FOLDER_NAME / src_path.name
 
         if src_path.suffix.lower() in PHOTOS_SUPPORTED_EXTENSIONS:
             move_media(
@@ -307,7 +312,6 @@ def move_from_source(
             continue
 
         if src_path.suffix.lower() in TEXT_SUPPORTED_EXTENSIONS:
-            # TODO: change the src_path to filepath since we are working with other files than media as well.
             dst_path = add_path_extension(
                 src_path, base_dir=dest_dir / DOCS_FOLDER_NAME
             )
@@ -320,7 +324,6 @@ def move_from_source(
             continue
 
         if src_path.suffix.lower() in AUDIO_SUPPORTED_EXTENSIONS:
-            # TODO: change the src_path to filepath since we are working with other files than media as well.
             dst_path = add_path_extension(
                 src_path, base_dir=dest_dir / AUDIO_FOLDER_NAME
             )
@@ -333,7 +336,6 @@ def move_from_source(
             continue
 
         if src_path.suffix.lower() in ARCHIVE_SUPPORTED_EXTENSIONS:
-            # TODO: change the src_path to filepath since we are working with other files than media as well.
             dst_path = add_path_extension(
                 src_path, base_dir=dest_dir / ARCHIVES_FOLDER_NAME
             )
