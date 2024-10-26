@@ -1,5 +1,3 @@
-import tempfile
-from typing import Iterator
 from unittest.mock import patch
 
 import pytest

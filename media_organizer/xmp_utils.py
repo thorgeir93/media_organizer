@@ -10,7 +10,6 @@ def find_xmp_config(photo_path: Path) -> Path | None:
     Returns:
         Path to the .xmp config file if found, otherwise None.
     """
-    # TODO: unittest this method.
     if not photo_path.is_file():
         raise ValueError("The provided path does not point to a valid file.")
     xmp_path: Path = photo_path.with_suffix(".xmp")
