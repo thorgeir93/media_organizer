@@ -271,90 +271,90 @@ def move_from_source(
     on_duplicate: OnDuplicate = OnDuplicate.CREATE_UNIQ_FILENAME_IF_CONTENT_MISMATCH,
 ) -> None:
     """Move media from given source directory to the given destination directory."""
-    for media_path in source_dir.rglob("*"):
-        if not media_path.exists():
+    for src_path in source_dir.rglob("*"):
+        if not src_path.exists():
             print(
-                f"[ WARNING ] file path {media_path} does not exists anymore, "
+                f"[ WARNING ] file path {src_path} does not exists anymore, "
                 "it might have been moved alongside other related files."
             )
             continue
 
-        if media_path.is_dir():
-            print(f"[ VERBOSE ][ SKIP ] is folder: {media_path}")
+        if src_path.is_dir():
+            print(f"[ VERBOSE ][ SKIP ] is folder: {src_path}")
             continue
 
-        dst_filepath: Path = dest_dir / UNSORT_FOLDER_NAME / media_path.name
+        dst_path: Path = dest_dir / UNSORT_FOLDER_NAME / src_path.name
         """The target destination filepath to move the source filepath to."""
 
-        if media_path.suffix.lower() in PHOTOS_SUPPORTED_EXTENSIONS:
+        if src_path.suffix.lower() in PHOTOS_SUPPORTED_EXTENSIONS:
             move_media(
-                media_path,
-                dest_dir / PHOTOS_FOLDER_NAME,
-                fast,
-                dry_run,
+                media_path=src_path,
+                dest_dir=dest_dir / PHOTOS_FOLDER_NAME,
+                fast=fast,
+                dry_run=dry_run,
                 on_duplicate=on_duplicate,
             )
             continue
 
-        if media_path.suffix.lower() in VIDEOS_SUPPORTED_EXTENSIONS:
+        if src_path.suffix.lower() in VIDEOS_SUPPORTED_EXTENSIONS:
             move_media(
-                media_path,
-                dest_dir / VIDEOS_FOLDER_NAME,
-                fast,
-                dry_run,
+                media_path=src_path,
+                dest_dir=dest_dir / VIDEOS_FOLDER_NAME,
+                fast=fast,
+                dry_run=dry_run,
                 on_duplicate=on_duplicate,
             )
             continue
 
-        if media_path.suffix.lower() in TEXT_SUPPORTED_EXTENSIONS:
-            # TODO: change the media_path to filepath since we are working with other files than media as well.
-            dst_filepath = add_path_extension(
-                media_path, base_dir=dest_dir / DOCS_FOLDER_NAME
+        if src_path.suffix.lower() in TEXT_SUPPORTED_EXTENSIONS:
+            # TODO: change the src_path to filepath since we are working with other files than media as well.
+            dst_path = add_path_extension(
+                src_path, base_dir=dest_dir / DOCS_FOLDER_NAME
             )
             move_file(
-                media_path,
-                dst_filepath,
-                dry_run,
+                src_filepath=src_path,
+                dst_filepath=dst_path,
+                dry_run=dry_run,
                 on_duplicate=on_duplicate,
             )
             continue
 
-        if media_path.suffix.lower() in AUDIO_SUPPORTED_EXTENSIONS:
-            # TODO: change the media_path to filepath since we are working with other files than media as well.
-            dst_filepath = add_path_extension(
-                media_path, base_dir=dest_dir / AUDIO_FOLDER_NAME
+        if src_path.suffix.lower() in AUDIO_SUPPORTED_EXTENSIONS:
+            # TODO: change the src_path to filepath since we are working with other files than media as well.
+            dst_path = add_path_extension(
+                src_path, base_dir=dest_dir / AUDIO_FOLDER_NAME
             )
             move_file(
-                media_path,
-                dst_filepath,
-                dry_run,
+                src_filepath=src_path,
+                dst_filepath=dst_path,
+                dry_run=dry_run,
                 on_duplicate=on_duplicate,
             )
             continue
 
-        if media_path.suffix.lower() in ARCHIVE_SUPPORTED_EXTENSIONS:
-            # TODO: change the media_path to filepath since we are working with other files than media as well.
-            dst_filepath = add_path_extension(
-                media_path, base_dir=dest_dir / ARCHIVES_FOLDER_NAME
+        if src_path.suffix.lower() in ARCHIVE_SUPPORTED_EXTENSIONS:
+            # TODO: change the src_path to filepath since we are working with other files than media as well.
+            dst_path = add_path_extension(
+                src_path, base_dir=dest_dir / ARCHIVES_FOLDER_NAME
             )
             move_file(
-                media_path,
-                dst_filepath,
-                dry_run,
+                src_filepath=src_path,
+                dst_filepath=dst_path,
+                dry_run=dry_run,
                 on_duplicate=on_duplicate,
             )
             continue
 
-        print(f"[ WARNING ] {media_path} Unknown type")
+        print(f"[ WARNING ] {src_path} Unknown type.")
 
-        if media_path.suffix:
-            dst_filepath = add_path_extension(
-                media_path, base_dir=dest_dir / UNSORT_FOLDER_NAME
+        if src_path.suffix:
+            dst_path = add_path_extension(
+                src_path, base_dir=dest_dir / UNSORT_FOLDER_NAME
             )
         move_file(
-            media_path,
-            dst_filepath,
-            dry_run,
+            src_filepath=src_path,
+            dst_filepath=dst_path,
+            dry_run=dry_run,
             on_duplicate=on_duplicate,
         )
 
