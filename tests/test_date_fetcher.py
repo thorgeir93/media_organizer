@@ -1,4 +1,3 @@
-import pytest
 import piexif
 from pathlib import Path
 from datetime import datetime
