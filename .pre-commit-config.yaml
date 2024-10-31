@@ -26,3 +26,10 @@ repos:
         entry: poetry run flake8
         language: system
         types: [python]
+-   repo: local
+    hooks:
+        -   id: pylint
+            name: pylint
+            entry: poetry run pylint
+            language: system
+            types: [python]
