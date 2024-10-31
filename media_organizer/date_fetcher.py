@@ -3,8 +3,6 @@ from datetime import datetime
 from pathlib import Path
 from typing import Final
 
-from dateutil import parser
-
 import piexif
 
 DARKTABLE_EXT_FORMAT: Final[str] = ".xmp"
@@ -98,7 +96,8 @@ def get_accurate_img_date(img_path: Path) -> datetime | None:
         exif_data = piexif.load(str(img_path))
     except (piexif._exceptions.InvalidImageDataError, ValueError) as error:
         print(
-            f"[ VERBOSE ]: piexif unable to read EXIF data from {img_path}, error: {error}"
+            f"[ VERBOSE ]: piexif unable to read EXIF data from {img_path}, "
+            f"error: {error}"
         )
         return None
 

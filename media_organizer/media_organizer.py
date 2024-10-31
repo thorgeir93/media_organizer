@@ -1,12 +1,10 @@
-from typing import Set, Final
 from pathlib import Path
-import argparse
-from argparse import Namespace
+from typing import Final, Set
 
 import click
 from imohash import hashfile
 
-from media_organizer.date_fetcher import get_fast_date, get_accurate_media_date
+from media_organizer.date_fetcher import get_accurate_media_date, get_fast_date
 
 # How the folder name is
 FOLDER_NAME_FORMAT: Final[str] = "%Y_%m_%d"
@@ -150,7 +148,8 @@ def move_media(
                 if media_path_hash == dest_endpoint_hash:
                     if media_path.exists() and media_path.is_file():
                         print(
-                            f"[ VERBOSE ] rm {media_path} ({media_path_hash}) / ({dest_endpoint_hash}):{dest_endpoint}"
+                            f"[ VERBOSE ] rm {media_path} ({media_path_hash}) / "
+                            f"({dest_endpoint_hash}):{dest_endpoint}"
                         )
                         if not dry_run:
                             media_path.unlink()
@@ -168,7 +167,8 @@ def move_media(
                     dest_endpoint_size: int = dest_endpoint.stat().st_size
 
                     if media_path_size < dest_endpoint_size:
-                        # TODO: find if it is a photo or a vido and put to relevant cateogry folder
+                        # TODO: find if it is a photo or a vido and put to
+                        #   relevant cateogry folder
                         # This is not the right folder
                         dest_folder = get_default_destinition() / EXPORT_FOLDER_NAME
                         dest_endpoint = dest_folder / date_folder / media_path.name
@@ -186,9 +186,7 @@ def move_media(
                         # The destinition media must be in category exported,
                         # we should then move the destintion path to export folder
                         # and move the source media path when it belongs to.
-                        print(
-                            f"[ WARNING ] source media path {media_path} can be delete"
-                        )
+                        print(f"[ WARNING ] source media path {media_path} can be delete")
 
                         # TODO: move destitniont endpoint to exported location
 
@@ -197,9 +195,11 @@ def move_media(
 
                     # TODO unittest this!
                     print(
-                        f"[ WARNING ] source media and dest_endpoint media does not match but have same name!"
+                        "[ WARNING ] source media and dest_endpoint media does not "
+                        "match but have same name!"
                     )
-                    # print({media_path}:{media_path_hash} / {dest_endpoint}:{dest_endpoint_hash} ?")
+                    # print({media_path}:{media_path_hash} /
+                    # {dest_endpoint}:{dest_endpoint_hash} ?")
             else:
                 print(f"[ SKIP ] {media_path} -> {dest_endpoint} Already exists!")
 
@@ -273,7 +273,8 @@ def move_from_source(
             continue
 
         if media_path.suffix.lower() in TEXT_SUPPORTED_EXTENSIONS:
-            # TODO: change the media_path to filepath since we are working with other files than media as well.
+            # TODO: change the media_path to filepath since we are
+            #   working with other files than media as well.
             move_file(
                 media_path,
                 dest_dir / DOCS_FOLDER_NAME,
@@ -283,7 +284,8 @@ def move_from_source(
             continue
 
         if media_path.suffix.lower() in AUDIO_SUPPORTED_EXTENSIONS:
-            # TODO: change the media_path to filepath since we are working with other files than media as well.
+            # TODO: change the media_path to filepath since we are
+            #   working with other files than media as well.
             move_file(
                 media_path,
                 dest_dir / AUDIO_FOLDER_NAME,
@@ -293,7 +295,8 @@ def move_from_source(
             continue
 
         if media_path.suffix.lower() in ARCHIVE_SUPPORTED_EXTENSIONS:
-            # TODO: change the media_path to filepath since we are working with other files than media as well.
+            # TODO: change the media_path to filepath since we are
+            #   working with other files than media as well.
             move_file(
                 media_path,
                 dest_dir / ARCHIVES_FOLDER_NAME,
@@ -333,7 +336,8 @@ def get_default_destinition() -> Path:
 @click.option(
     "--dry-run",
     is_flag=True,
-    help="Perform a dry run without actual moving. Only print out the action that would be taken.",
+    help="Perform a dry run without actual moving. "
+    "Only print out the action that would be taken.",
 )
 @click.option(
     "--overwrite",
@@ -360,10 +364,12 @@ def main(
     Files that do not have creation date in the exif metadata are either moved to
     relevant category folder alongside the file extension. For example document called
     foo.pdf will be organized into <destination dir>/docs/pdf/file.pdf path.
-    Some files are moved to the unsort folder, the extension haven't been found or other issue encountered.
+    Some files are moved to the unsort folder, the extension haven't been found or
+    other issue encountered.
 
     # TODO: define <destination dir>/unsort folder.
-    #   -   if media file like bar.mp3 does not contain creation date, or malfunction date. It should go to
+    #   -   if media file like bar.mp3 does not contain creation date, or malfunction
+    #       date. It should go to
     #       <destination dir>/audio/mp3/bar.mp3
     """
     source_dir_path: Path = Path(source_dir)

@@ -1,10 +1,8 @@
-import tempfile
-from typing import Iterator
+from pathlib import Path
 
 import pytest
-from pathlib import Path
-from media_organizer import media_organizer
 
+from media_organizer import media_organizer
 from tests.create_img import create_mock_image
 
 
@@ -109,5 +107,6 @@ class TestMediaOrganizer:
         assert expected_new_image_path.exists()
         assert not original_media_path.exists()
 
-    # TODO: fix delete_original, it does not do what it should do, that is delete the original files even
-    #   though it is not moved to the destination directory. Reconcider this.
+    # TODO: fix delete_original, it does not do what it should do,
+    #  that is delete the original files even though it is not
+    #  moved to the destination directory. Reconcider this.

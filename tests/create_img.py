@@ -1,7 +1,6 @@
 import random
 
 import piexif
-
 from PIL import Image
 
 

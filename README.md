@@ -11,6 +11,12 @@
 - Special handling for Darktable `.xmp` configuration files.
 - Supports multiple image formats.
 
+## Development
+
+```sh
+pre-commit run --all-files
+```
+
 ## Improvments/TODO
 * Logging:
   * allow verbose, do not use `print`.
@@ -27,7 +33,7 @@
 
 1. The script scans the source directory for all media files.
 2. For each file, it attempts to fetch the date from:
-   - EXIF data if available. 
+   - EXIF data if available.
    - If EXIF data isn't available or the file isn't an image, it uses the file's creation or modification date.
    - For Darktable `.xmp` files, it retrieves the date from the associated image.
 3. Once the date is determined, it moves the media file to a directory named after the date (e.g., `2023-05-20`).
@@ -123,4 +129,3 @@ If you remove the dry run flag, it will organize the media by moving the images/
 ## Author
 
 Þorgeir Eyfjörð Sigurðsson
-

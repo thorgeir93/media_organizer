@@ -1,15 +1,17 @@
-import pytest
-import piexif
-from pathlib import Path
 from datetime import datetime
+from pathlib import Path
 
-from media_organizer.date_fetcher import extract_creation_date
-from media_organizer.date_fetcher import get_accurate_media_date
-from media_organizer.date_fetcher import get_accurate_img_date
-from media_organizer.date_fetcher import get_fast_date
+import piexif
+
+from media_organizer.date_fetcher import (
+    extract_creation_date,
+    get_accurate_img_date,
+    get_accurate_media_date,
+    get_fast_date,
+)
 
 from .create_img import create_mock_image
-from .create_video import create_test_video, add_creation_date_to_video
+from .create_video import add_creation_date_to_video, create_test_video
 
 
 def create_test_files(tmpdir):
