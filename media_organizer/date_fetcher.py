@@ -30,7 +30,7 @@ def try_parse_date(raw_date: str, date_format: str) -> datetime | None:
         return None
 
 
-def parse_raw_date(raw_date: str) -> datetime:
+def parse_raw_date(raw_date: str) -> datetime | None:
     """Parse the given raw date into datetime object."""
     for common_date_format in COMMON_DATE_FORMATS:
         parsed_date: datetime = try_parse_date(
@@ -41,7 +41,7 @@ def parse_raw_date(raw_date: str) -> datetime:
     return None
 
 
-def extract_creation_date(media_path: str) -> datetime | None:
+def extract_creation_date(media_path: Path) -> datetime | None:
     """
     Extract the creation date from media using exiftool.
 
@@ -52,7 +52,7 @@ def extract_creation_date(media_path: str) -> datetime | None:
     - datetime: Datetime object representing the creation date of the media.
     """
 
-    cmd = ["exiftool", "-CreateDate", "-s3", media_path]
+    cmd = ["exiftool", "-CreateDate", "-s3", str(media_path)]
 
     result = subprocess.run(
         cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True
@@ -135,17 +135,17 @@ def get_accurate_media_date(media_path: Path) -> datetime | None:
     Returns:
         Date of the given media file path. None if date extraction fails.
     """
-    img_date: datetime
+    img_date: datetime | None
 
     # Special case for Darktable config files.
     if media_path.suffix == DARKTABLE_EXT_FORMAT:
         try:
-            img_date: datetime = get_accurate_img_date(media_path.with_suffix(""))
+            img_date = get_accurate_img_date(media_path.with_suffix(""))
         except FileNotFoundError:
             print(f"[ WARNING ] {media_path} cfg file does not belongs to any file")
             return None
     else:
-        img_date: datetime = get_accurate_img_date(media_path)
+        img_date = get_accurate_img_date(media_path)
 
     if img_date:
         return img_date
