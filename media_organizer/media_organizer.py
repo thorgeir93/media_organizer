@@ -1,3 +1,9 @@
+"""Categories media files based on date.
+
+This script is the entry point of this repository.
+The high level logic is implemented here.
+"""
+
 from pathlib import Path
 from typing import Final
 
@@ -120,12 +126,11 @@ def move_from_source(
     on_duplicate: OnDuplicate = OnDuplicate.CREATE_UNIQ_FILENAME_IF_CONTENT_MISMATCH,
 ) -> None:
     """Move media from given source directory to the given destination directory."""
+    # The target destination filepath to move the source filepath to.
+    # By default, we move the source file to unsorted folder if we cannot
+    # categorize the file.
     dst_path: Path
-    """The target destination filepath to move the source filepath to.
 
-    By default, we move the source file to unsorted folder if we cannot
-    categorize the file.
-    """
     for src_path in source_dir.rglob("*"):
         if not src_path.exists():
             print(
@@ -289,4 +294,4 @@ def main(
 # TODO: split the file into interface and logic.
 
 if __name__ == "__main__":
-    main()
+    main()  # pylint: disable=E1120

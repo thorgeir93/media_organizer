@@ -14,6 +14,9 @@ line-length = 90
 [tool.isort]
 profile = "black"
 
+[tool.pylint]
+disable = ["fixme"]
+
 [tool.poetry.dependencies]
 python = "^3.11"
 pillow = "^10.0.0"

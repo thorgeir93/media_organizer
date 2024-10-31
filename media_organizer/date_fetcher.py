@@ -1,3 +1,5 @@
+"""Methods to extract creation date from files."""
+
 import subprocess
 from datetime import datetime
 from pathlib import Path
@@ -49,13 +51,12 @@ def extract_creation_date(media_path: Path) -> datetime | None:
     Returns:
     - datetime: Datetime object representing the creation date of the media.
     """
+    cmd: list[str] = ["exiftool", "-CreateDate", "-s3", str(media_path)]
 
-    cmd = ["exiftool", "-CreateDate", "-s3", str(media_path)]
-
-    result = subprocess.run(
-        cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True
+    result: subprocess.CompletedProcess = subprocess.run(
+        cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, check=True
     )
-    raw_date = result.stdout.strip()
+    raw_date: str = result.stdout.strip()
 
     if raw_date == "":
         return None
@@ -94,7 +95,10 @@ def get_accurate_img_date(img_path: Path) -> datetime | None:
     """
     try:
         exif_data = piexif.load(str(img_path))
-    except (piexif._exceptions.InvalidImageDataError, ValueError) as error:
+    except (
+        piexif._exceptions.InvalidImageDataError,  # pylint: disable=W0212
+        ValueError,
+    ) as error:
         print(
             f"[ VERBOSE ]: piexif unable to read EXIF data from {img_path}, "
             f"error: {error}"
@@ -148,9 +152,9 @@ def get_accurate_media_date(media_path: Path) -> datetime | None:
 
     if img_date:
         return img_date
-    else:
-        # probably a video file
-        return extract_creation_date(media_path)
+
+    # probably a video file
+    return extract_creation_date(media_path)
 
 
 # def get_accurate_img_date(img_path: Path) -> Optional[datetime]:
