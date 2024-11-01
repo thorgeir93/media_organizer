@@ -1,3 +1,6 @@
+# pylint: disable=too-few-public-methods
+"""Test retrieving creation date from files."""
+
 from datetime import datetime
 from pathlib import Path
 
@@ -15,6 +18,7 @@ from .create_video import add_creation_date_to_video, create_test_video
 
 
 def create_test_files(tmpdir):
+    """Generate dummy test files on the filesystem."""
     # Create test image and video files
     image_file = tmpdir.join("test_image.jpg")
     video_file = tmpdir.join("test_video.mp4")
@@ -26,9 +30,14 @@ def create_test_files(tmpdir):
 
 
 def test_extract_creation_date(monkeypatch, tmpdir):
-    # Mock subprocess call for testing purposes
-    def mock_run(*args, **kwargs):
+    """Test extract creation date."""
+
+    def mock_run(*args, **kwargs):  # pylint: disable=unused-argument
+        """Mock subprocess call."""
+
         class MockResult:
+            """Mocked result with fixed date."""
+
             stdout = "2023:05:20 15:45:50"
             stderr = ""
 
@@ -43,6 +52,7 @@ def test_extract_creation_date(monkeypatch, tmpdir):
 
 
 def test_get_fast_date(tmpdir):
+    """Test extract date from files using fast mode."""
     image_file, _ = create_test_files(tmpdir)
     result_date = get_fast_date(Path(image_file))
 
@@ -54,6 +64,7 @@ def test_get_fast_date(tmpdir):
 
 
 def test_get_accurate_img_date_with_exif(monkeypatch, tmpdir):
+    """Test extract creation date from a file using accurate method."""
     # Simulated EXIF data
     mocked_exif_data = {
         "0th": {},
@@ -76,6 +87,7 @@ def test_get_accurate_img_date_with_exif(monkeypatch, tmpdir):
 
 
 def test_image_creation_date_extraction(tmpdir):
+    """Test extract creation date from a image using accurate method."""
     # Create test image with a creation date
     image_path = tmpdir.join("test_image.jpg")
     create_mock_image(image_path, "2023:05:20 15:45:50")
@@ -88,12 +100,11 @@ def test_image_creation_date_extraction(tmpdir):
 
 
 def test_video_creation_date_extraction(tmpdir):
-    # Create test video
+    """Test extract creation date from a video using accurate method."""
     video_path = tmpdir.join("test_video.mp4")
     create_test_video(str(video_path))
     new_video_path: str = add_creation_date_to_video(video_path, "2023-05-20T15:45:50")
 
     # Extract the date using your function
     extracted_date = get_accurate_media_date(Path(new_video_path))
-    print(extracted_date)
     assert extracted_date == datetime(2023, 5, 20, 15, 45, 50)
