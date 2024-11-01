@@ -1,10 +1,13 @@
+"""Utilities for handling files in the filesystem."""
+
 from pathlib import Path
 
 from imohash import hashfile
 
 
 def create_unique_filepath(filepath: Path) -> Path:
-    """Create a unique file path if filepath exists by appending a number to the file name.
+    """Create a unique file path if filepath exists by appending
+    a number to the file name.
 
     Args:
         filepath: The destination file path.
@@ -26,7 +29,7 @@ def create_unique_filepath(filepath: Path) -> Path:
 
 def is_files_equal(src_path: Path, dst_path: Path) -> bool:
     """Return True if the given two files are equal otherwise False."""
-    # TODO: unittest this method.
+    # TODO:2024-10-31:THS: unittest this method.
     # Compare file sizes first (cheap check)
     if src_path.stat().st_size != dst_path.stat().st_size:
         return True
@@ -34,6 +37,7 @@ def is_files_equal(src_path: Path, dst_path: Path) -> bool:
 
 
 def add_path_extension(src_filepath: Path, base_dir: Path) -> Path:
+    """Expand the base directory using the file extension of the filepath as subdir."""
     file_extension: str = src_filepath.suffix.strip(".")
     dest_filepath: Path = base_dir / file_extension / src_filepath.name
     return dest_filepath

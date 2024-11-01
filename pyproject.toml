@@ -8,24 +8,35 @@ readme = "README.md"
 [tool.poetry.scripts]
 media_organizer = 'media_organizer.media_organizer:main'
 
+[tool.black]
+line-length = 90
+
+[tool.isort]
+profile = "black"
+
+[tool.pylint]
+disable = ["fixme"]
+
 [tool.poetry.dependencies]
 python = "^3.11"
 pillow = "^10.0.0"
 imohash = "^1.0.5"
 numpy = "1.26.4"
-black = "^24.10.0"
 python-dateutil = "^2.9.0.post0"
 click = "^8.1.7"
 
 
 [tool.poetry.group.dev.dependencies]
 ipython = "^8.15.0"
-black = "^24.10.0"
 flake8 = "^6.1.0"
 mypy = "^1.5.1"
 pytest = "^7.4.2"
 piexif = "^1.1.3"
 opencv-python = "^4.8.0.76"
+isort = "^5.13.2"
+pre-commit = "^4.0.1"
+black = "^24.10.0"
+pylint = "^3.3.1"
 
 [build-system]
 requires = ["poetry-core"]

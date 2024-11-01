@@ -1,19 +1,20 @@
+"""Create minimal image on the filesystem."""
+
 import random
 
 import piexif
-
 from PIL import Image
 
 
 def create_mock_image(
-    file_path: str, date_str: str, format: str = "JPEG", randomize: bool = True
+    file_path: str, date_str: str, image_format: str = "JPEG", randomize: bool = True
 ):
     """Create random mock image.
 
     Args:
         file_path: Name of the image.
         date_str: Format "YYYY:MM:DD HH:MM:SS"
-        format: Format of the image, for example JPEG, PNG etc.
+        image_format: Format of the image, for example JPEG, PNG etc.
     """
     # Create a blank image
     color: tuple[int, int, int] = (67, 30, 11)
@@ -30,4 +31,4 @@ def create_mock_image(
     exif_bytes = piexif.dump(exif_dict)
 
     # Save the image with the EXIF data
-    img.save(str(file_path), format=format, exif=exif_bytes)
+    img.save(str(file_path), image_format=image_format, exif=exif_bytes)

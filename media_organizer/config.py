@@ -1,3 +1,8 @@
+"""Contains media organizer configs.
+
+Configs like the name of the directories to store the files and more.
+"""
+
 from pathlib import Path
 from typing import Final, Set
 
@@ -69,7 +74,7 @@ DARKTABLE_EXT_FORMAT: Final[str] = ".xmp"
 """Config files for image editing.
 
 Darktable is an application to process images in batches.
-For each image, the application creates an config file 
+For each image, the application creates an config file
 with extension `.xmp`. These config files contains a XML
 template that includes how the image has been editing.
 This allows us to keep the raw image untouched, still
@@ -81,4 +86,5 @@ The trick is to move the config file with the image it belongs.
 
 
 def get_default_destinition() -> Path:
+    """Return the default folder for the media file destination."""
     return Path.home() / MEDIA_FOLDER_NAME

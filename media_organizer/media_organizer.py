@@ -1,15 +1,21 @@
-from typing import Set, Final
+"""Categories media files based on date.
+
+This script is the entry point of this repository.
+The high level logic is implemented here.
+"""
+
 from pathlib import Path
+from typing import Final
 
 import click
 
 from media_organizer import config
-from media_organizer.date_fetcher import get_fast_date, get_accurate_media_date
+from media_organizer.date_fetcher import get_accurate_media_date, get_fast_date
 from media_organizer.enums import OnDuplicate
 from media_organizer.file_utils import (
+    add_path_extension,
     create_unique_filepath,
     is_files_equal,
-    add_path_extension,
 )
 from media_organizer.xmp_utils import find_xmp_config
 
@@ -34,7 +40,7 @@ def move_file(
             already exists in the destination folder.
     """
     # TODO: unitest source file path without extension specifically.
-    # TODO: covera all statements in unittest.
+    # TODO: cover all statements in unittest.
 
     if dst_filepath.exists():
         print(
@@ -120,12 +126,11 @@ def move_from_source(
     on_duplicate: OnDuplicate = OnDuplicate.CREATE_UNIQ_FILENAME_IF_CONTENT_MISMATCH,
 ) -> None:
     """Move media from given source directory to the given destination directory."""
+    # The target destination filepath to move the source filepath to.
+    # By default, we move the source file to unsorted folder if we cannot
+    # categorize the file.
     dst_path: Path
-    """The target destination filepath to move the source filepath to.
 
-    By default, we move the source file to unsorted folder if we cannot
-    categorize the file. 
-    """
     for src_path in source_dir.rglob("*"):
         if not src_path.exists():
             print(
@@ -223,7 +228,8 @@ def move_from_source(
 @click.option(
     "--dry-run",
     is_flag=True,
-    help="Perform a dry run without actual moving. Only print out the action that would be taken.",
+    help="Perform a dry run without actual moving. "
+    "Only print out the action that would be taken.",
 )
 @click.option(
     "--on-duplicate",
@@ -266,7 +272,8 @@ def main(
         with different name. Which is waste of space.
 
     # TODO: define <destination dir>/unsort folder.
-    #   -   if media file like bar.mp3 does not contain creation date, or malfunction date. It should go to
+    #   -   if media file like bar.mp3 does not contain creation date, or malfunction
+    #       date. It should go to
     #       <destination dir>/audio/mp3/bar.mp3
     """
     source_dir_path: Path = Path(source_dir)
@@ -287,4 +294,4 @@ def main(
 # TODO: split the file into interface and logic.
 
 if __name__ == "__main__":
-    main()
+    main()  # pylint: disable=E1120

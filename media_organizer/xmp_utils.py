@@ -1,3 +1,5 @@
+"""Utilities for handling .xmp config file."""
+
 from pathlib import Path
 
 

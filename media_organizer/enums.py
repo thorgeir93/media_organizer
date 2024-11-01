@@ -1,3 +1,5 @@
+"""Contains defined Enum for the project."""
+
 from enum import StrEnum
 from typing import Final
 
@@ -20,4 +22,5 @@ class OnDuplicate(StrEnum):
     OVERWRITE: Final[str] = "overwrite"
     """Overwrite the destination file with the source file."""
     SKIP: Final[str] = "skip"
-    """Leave the source filepath untouched if the same filename exists in the destination."""
+    """Leave the source filepath untouched if the same filename
+    exists in the destination."""
