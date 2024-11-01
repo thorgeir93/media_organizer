@@ -17,6 +17,9 @@ profile = "black"
 [tool.pylint]
 disable = ["fixme"]
 
+[tool.mypy]
+config_file = "mypy.ini"
+
 [tool.poetry.dependencies]
 python = "^3.11"
 pillow = "^10.0.0"
@@ -37,6 +40,7 @@ isort = "^5.13.2"
 pre-commit = "^4.0.1"
 black = "^24.10.0"
 pylint = "^3.3.1"
+py = "^1.11.0"
 
 [build-system]
 requires = ["poetry-core"]

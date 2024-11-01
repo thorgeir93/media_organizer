@@ -5,7 +5,7 @@ from datetime import datetime
 from pathlib import Path
 from typing import Final
 
-import piexif
+import piexif  # type: ignore
 
 DARKTABLE_EXT_FORMAT: Final[str] = ".xmp"
 
@@ -32,10 +32,9 @@ def try_parse_date(raw_date: str, date_format: str) -> datetime | None:
 
 def parse_raw_date(raw_date: str) -> datetime | None:
     """Parse the given raw date into datetime object."""
+    parsed_date: datetime | None
     for common_date_format in COMMON_DATE_FORMATS:
-        parsed_date: datetime = try_parse_date(
-            raw_date=raw_date, date_format=common_date_format
-        )
+        parsed_date = try_parse_date(raw_date=raw_date, date_format=common_date_format)
         if parsed_date:
             return parsed_date
     return None

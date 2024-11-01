@@ -54,7 +54,9 @@ def test_extract_creation_date(monkeypatch, tmpdir):
 def test_get_fast_date(tmpdir):
     """Test extract date from files using fast mode."""
     image_file, _ = create_test_files(tmpdir)
-    result_date = get_fast_date(Path(image_file))
+    result_date: datetime | None = get_fast_date(Path(image_file))
+
+    assert result_date
 
     # Here, we're asserting against the current date.
     # This will be true because the file was just created.
