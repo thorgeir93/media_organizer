@@ -2,7 +2,7 @@
 
 from pathlib import Path
 
-from imohash import hashfile
+from imohash import hashfile  # type: ignore
 
 
 def create_unique_filepath(filepath: Path) -> Path:

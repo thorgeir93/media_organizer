@@ -4,6 +4,7 @@ from pathlib import Path
 from unittest.mock import patch
 
 import pytest
+from py._path.local import LocalPath
 
 from media_organizer import media_organizer
 from media_organizer.media_organizer import OnDuplicate, create_unique_filepath
@@ -36,7 +37,7 @@ class TestMediaOrganizer:
         media_exif_date: str,
         filename: str,
         expected_dest_filepath: Path,
-        tmpdir: Path,
+        tmpdir: LocalPath,
     ) -> None:
         """Test media organizer interface."""
         image_format: str = "JPEG"
@@ -84,7 +85,7 @@ class TestMediaOrganizer:
         media_exif_date: str,
         filename: str,
         expected_dest_filepath: Path,
-        tmpdir: Path,
+        tmpdir: LocalPath,
     ) -> None:
         """Test media organizer when media file already exists in the destination."""
         image_format: str = "JPEG"

@@ -1,6 +1,7 @@
 """Create minimal image on the filesystem."""
 
 import random
+from typing import Any
 
 import piexif
 from PIL import Image
@@ -22,10 +23,11 @@ def create_mock_image(
         color = (random.randint(0, 255), random.randint(0, 255), random.randint(0, 255))
     img = Image.new("RGB", (60, 30), color=color)
 
-    # Prepare EXIF data
-    exif_dict = {"0th": {}, "Exif": {}, "1st": {}, "thumbnail": None, "GPS": {}}
-    exif_dict["Exif"][piexif.ExifIFD.DateTimeOriginal] = date_str.encode("utf-8")
-    exif_dict["Exif"][piexif.ExifIFD.DateTimeDigitized] = date_str.encode("utf-8")
+    exif: dict[Any, bytes] = {
+        piexif.ExifIFD.DateTimeOriginal: date_str.encode("utf-8"),
+        piexif.ExifIFD.DateTimeDigitized: date_str.encode("utf-8"),
+    }
+    exif_dict = {"0th": {}, "Exif": exif, "1st": {}, "thumbnail": None, "GPS": {}}
 
     # Dump the EXIF data into bytes
     exif_bytes = piexif.dump(exif_dict)
